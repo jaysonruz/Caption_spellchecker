@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Caption Fixer</title>
+    <!-- Add Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- Custom CSS for gray containers -->
+    <style>
+        .result-container {
+            background-color: #c0ddf9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .gray-container {
+            background-color: #ffdfdf;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .grayed-out-text {
+            color: #1a1919;
+        }
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Caption Fixer</h1>
+        <p>
+            Welcome to the "Caption Quality Checker" app! With this app, you can ensure your captions are of the highest quality by undergoing two crucial processes:
+        </p>
+        <ul>
+            <li>
+                <strong>Cleaning:</strong> The entered caption will be cleaned to remove any emoticons, hashtags, tags, and text enclosed within parentheses, ensuring a tidy and symbol-free caption.
+            </li>
+            <li>
+                <strong>Spellcheck:</strong> The cleaned caption will be analyzed using powerful spellcheck logic to detect and offer corrections for any potential spelling or grammatical mistakes.
+            </li>
+        </ul>
+        <p>
+            Simply enter your caption in the provided text area, hit the "Fix Caption" button, and witness the transformation as your caption gets cleaned and spellchecked. Enjoy creating captions with confidence and accuracy using the "Caption Quality Checker" app!
+        </p>
+        <!-- The rest of the HTML code remains unchanged -->
+
+        <form id="captionForm">
+            <div class="mb-3">
+                <label for="captionText" class="form-label">Enter your caption:</label>
+                <textarea class="form-control" id="captionText" rows="5"></textarea>
+                <small id="wordCount" class="form-text text-muted">Words: 0</small>
+                <small id="characterCount" class="form-text text-muted">Characters remaining: 500</small>
+                <small id="totalCharacterCount" class="form-text text-muted">Total characters: 0</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Fix Caption</button>
+        </form>
+
+        <!-- The rest of the HTML code remains unchanged -->
+
+        <!-- Gray container for cleaned_text -->
+        <div class="gray-container mt-4">
+            <h5>Cleaned Text:</h5>
+            <p class="grayed-out-text" id="cleanedText"></p>
+            <br>
+            <br>
+        </div>
+
+        <!-- result container -->
+        <div class="result-container mt-4">
+            <!-- Notification for mistakes -->
+            <div id="notification" class="alert alert-warning mt-4" style="display: none;">
+                Mistakes found in the caption. Please review the corrections.
+            </div>
+            <h5>Result:</h5>
+            <pre id="result"></pre>
+        </div>
+
+    </div>
+
+    <!-- Add Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function updateWordCount() {
+            const captionText = document.getElementById("captionText").value;
+            const wordCount = captionText.trim().split(/\s+/).filter(word => word !== "").length;
+            const wordCountElement = document.getElementById("wordCount");
+        
+            wordCountElement.textContent = `Words: ${wordCount}`;
+        }
+        
+        // Update the word count while typing
+        document.getElementById("captionText").addEventListener("input", function () {
+            updateWordCount();
+            updateTotalCharacterCount();
+        });
+        
+        // Initial update of word count
+        updateWordCount();
+
+        //-------------------------------------------------------------------------------------------------
+        const CHARACTER_LIMIT = 500;
+
+        function updateCharacterCount() {
+            const captionText = document.getElementById("captionText").value;
+            const characterCount = captionText.length;
+            const remainingCharacters = CHARACTER_LIMIT - characterCount;
+            const characterCountElement = document.getElementById("characterCount");
+    
+            characterCountElement.textContent = `Characters remaining: ${remainingCharacters}`;
+        }
+
+        // Update the character count while typing
+        document.getElementById("captionText").addEventListener("input", function () {
+            updateCharacterCount();
+            updateTotalCharacterCount();
+        });
+
+        // Limit the caption text to 500 characters
+        document.getElementById("captionText").addEventListener("input", function () {
+            const captionText = this.value;
+            if (captionText.length > CHARACTER_LIMIT) {
+                this.value = captionText.slice(0, CHARACTER_LIMIT);
+            }
+            updateCharacterCount(); // Update character count after limiting the text
+            updateTotalCharacterCount();
+        });
+
+        // Initial update of character count
+        updateCharacterCount();
+
+        //----------------------------------------------------------------------------------------------------------
+
+        function updateTotalCharacterCount() {
+            const captionText = document.getElementById("captionText").value;
+            const totalCharacterCount = captionText.length;
+            const totalCharacterCountElement = document.getElementById("totalCharacterCount");
+
+            totalCharacterCountElement.textContent = `Total characters: ${totalCharacterCount}`;
+        }
+
+        // Update the total character count while typing
+        document.getElementById("captionText").addEventListener("input", function () {
+            updateTotalCharacterCount();
+        });
+
+        // Initial update of total character count
+        updateTotalCharacterCount();
+
+        //----------------------------------------------------------------------------------------------------------
+        document.getElementById("captionForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            const captionText = document.getElementById("captionText").value;
+            const data = { "text": captionText };
+
+            fetch("/fix_caption", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                const cleanedText = result.cleaned_text;
+                delete result.cleaned_text; // Remove the cleaned_text key from the result object
+                document.getElementById("result").innerText = "Fixed Caption:\n" + JSON.stringify(result, null, 2);
+                document.getElementById("notification").style.display = result.corrections && result.corrections.length > 0 ? "block" : "none";
+                document.getElementById("cleanedText").innerHTML = cleanedText;
+
+                // Highlight corrected words in the cleaned text
+                if (result.corrections && result.corrections.length > 0) {
+                    const correctedWords = result.corrections.map(correction => ({
+                        start: correction.start,
+                        text: correction.text
+                    }));
+                    highlightWordsInCaption(cleanedText, correctedWords);
+                }
+            })
+            .catch(error => {
+                document.getElementById("result").innerText = "Error: " + error.message;
+            });
+        });
+
+        function highlightWordsInCaption(captionText, correctedWords) {
+            let highlightedCaption = captionText;
+            
+            correctedWords.forEach(correction => {
+                const { start, text } = correction;
+                const regex = new RegExp(`\\b${text}\\b`, "gi");
+                highlightedCaption = highlightedCaption.replace(regex, match => `<span class="highlight">${match}</span>`);
+            });
+    
+            document.getElementById("cleanedText").innerHTML = highlightedCaption;
+        }
+    </script>
+</body>
+</html>
