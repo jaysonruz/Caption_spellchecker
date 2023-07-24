@@ -166,12 +166,12 @@
                 const cleanedText = result.cleaned_text;
                 delete result.cleaned_text; // Remove the cleaned_text key from the result object
                 document.getElementById("result").innerText = "Fixed Caption:\n" + JSON.stringify(result, null, 2);
-                document.getElementById("notification").style.display = result.corrections && result.corrections.length > 0 ? "block" : "none";
+                document.getElementById("notification").style.display = result.Gingerit.corrections && result.Gingerit.corrections.length > 0 ? "block" : "none";
                 document.getElementById("cleanedText").innerHTML = cleanedText;
 
                 // Highlight corrected words in the cleaned text
-                if (result.corrections && result.corrections.length > 0) {
-                    const correctedWords = result.corrections.map(correction => ({
+                if (result.Gingerit.corrections && result.Gingerit.corrections.length > 0) {
+                    const correctedWords = result.Gingerit.corrections.map(correction => ({
                         start: correction.start,
                         text: correction.text
                     }));
