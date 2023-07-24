@@ -43,7 +43,6 @@
         <p>
             Simply enter your caption in the provided text area, hit the "Fix Caption" button, and witness the transformation as your caption gets cleaned and spellchecked. Enjoy creating captions with confidence and accuracy using the "Caption Quality Checker" app!
         </p>
-        <!-- The rest of the HTML code remains unchanged -->
 
         <form id="captionForm">
             <div class="mb-3">
@@ -56,8 +55,6 @@
             <button type="submit" class="btn btn-primary">Fix Caption</button>
         </form>
 
-        <!-- The rest of the HTML code remains unchanged -->
-
         <!-- Gray container for cleaned_text -->
         <div class="gray-container mt-4">
             <h5>Cleaned Text:</h5>
@@ -66,16 +63,33 @@
             <br>
         </div>
 
-        <!-- result container -->
+        <!-- Result container -->
         <div class="result-container mt-4">
             <!-- Notification for mistakes -->
             <div id="notification" class="alert alert-warning mt-4" style="display: none;">
                 Mistakes found in the caption. Please review the corrections.
             </div>
             <h5>Result:</h5>
-            <pre id="result"></pre>
-        </div>
+            <div class="row">
+                <!-- Gingerit API result container -->
+                <div class="col-md-4 mb-4">
+                    <h6>Gingerit API:</h6>
+                    <pre id="gingeritResult"></pre>
+                </div>
 
+                <!-- Bing API result container -->
+                <div class="col-md-4 mb-4">
+                    <h6>Bing API:</h6>
+                    <pre id="bingApiResult"></pre>
+                </div>
+
+                <!-- Textgear API result container -->
+                <div class="col-md-4 mb-4">
+                    <h6>Textgear API:</h6>
+                    <pre id="textgearApiResult"></pre>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Add Bootstrap JS -->
@@ -165,7 +179,16 @@
             .then(result => {
                 const cleanedText = result.cleaned_text;
                 delete result.cleaned_text; // Remove the cleaned_text key from the result object
-                document.getElementById("result").innerText = "Fixed Caption:\n" + JSON.stringify(result, null, 2);
+
+                // Display Gingerit API result
+                document.getElementById("gingeritResult").innerText = JSON.stringify(result.Gingerit, null, 2);
+
+                // Display Bing API result
+                document.getElementById("bingApiResult").innerText = JSON.stringify(result["Bing API"], null, 2);
+
+                // Display Textgear API result
+                document.getElementById("textgearApiResult").innerText = JSON.stringify(result["Textgear API"], null, 2);
+
                 document.getElementById("notification").style.display = result.Gingerit.corrections && result.Gingerit.corrections.length > 0 ? "block" : "none";
                 document.getElementById("cleanedText").innerHTML = cleanedText;
 
